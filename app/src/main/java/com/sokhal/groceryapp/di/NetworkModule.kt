@@ -21,7 +21,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideBaseUrl(): String = "http://localhost:8080"
+    fun provideBaseUrl(): String {
+        // Use the BuildConfig field which can be configured for different build types
+        return com.sokhal.groceryapp.BuildConfig.API_BASE_URL
+    }
 
     @Provides
     @Singleton
