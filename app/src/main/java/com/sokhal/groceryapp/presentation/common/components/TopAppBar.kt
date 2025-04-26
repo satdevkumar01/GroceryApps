@@ -1,5 +1,6 @@
 package com.sokhal.groceryapp.presentation.common.components
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
@@ -18,7 +19,7 @@ fun GroceryTopAppBar(
     title: String,
     navController: NavController,
     showBackButton: Boolean = false,
-    actions: @Composable () -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {}
 ) {
     TopAppBar(
         title = {
