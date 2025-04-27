@@ -12,6 +12,7 @@ import com.sokhal.groceryapp.presentation.auth.register.RegisterScreen
 import com.sokhal.groceryapp.presentation.home.HomeScreen
 import com.sokhal.groceryapp.presentation.product.add_product.AddProductScreen
 import com.sokhal.groceryapp.presentation.product.product_detail.ProductDetailScreen
+import com.sokhal.groceryapp.presentation.product.product_list.ProductListScreen
 import com.sokhal.groceryapp.presentation.profile.ProfileScreen
 import com.sokhal.groceryapp.presentation.splash.SplashScreen
 
@@ -49,6 +50,10 @@ fun SetupNavGraph(
 
         composable(route = Screen.AddProduct.route) {
             AddProductScreen(navController = navController)
+        }
+
+        composable(route = Screen.ProductList.route) {
+            ProductListScreen(navController = navController)
         }
 
         composable(route = Screen.Profile.route) {

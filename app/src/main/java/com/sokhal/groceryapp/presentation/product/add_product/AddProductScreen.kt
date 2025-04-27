@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,15 +29,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.sokhal.groceryapp.presentation.common.components.BottomNavigationBar
 import com.sokhal.groceryapp.presentation.common.components.GroceryTopAppBar
+import com.sokhal.groceryapp.presentation.common.navigation.Screen
+import com.sokhal.groceryapp.presentation.product.ProductViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddProductScreen(
     navController: NavController,
-    // viewModel: AddProductViewModel = hiltViewModel()
+    viewModel: ProductViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -44,17 +49,27 @@ fun AddProductScreen(
     var imageUrl by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var quantity by remember { mutableStateOf("") }
-    
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
-    
+
+    val productDetailState by viewModel.productDetailState.collectAsStateWithLifecycle()
+
+    // Handle successful product addition
+    LaunchedEffect(productDetailState.isOperationSuccessful) {
+        if (productDetailState.isOperationSuccessful == true) {
+            // Navigate back or to product list after successful addition
+            navController.navigate(Screen.ProductList.route) {
+                popUpTo(Screen.AddProduct.route) { inclusive = true }
+            }
+            // Reset operation status
+            viewModel.resetOperationStatus()
+        }
+    }
+
     Scaffold(
         topBar = {
             GroceryTopAppBar(
                 title = "Add Product",
                 navController = navController,
-                showBackButton = false
+                showBackButton = true
             )
         },
         bottomBar = {
@@ -83,9 +98,9 @@ fun AddProductScreen(
                         imeAction = ImeAction.Next
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Description field
                 OutlinedTextField(
                     value = description,
@@ -96,9 +111,9 @@ fun AddProductScreen(
                         imeAction = ImeAction.Next
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Price field
                 OutlinedTextField(
                     value = price,
@@ -110,9 +125,9 @@ fun AddProductScreen(
                         imeAction = ImeAction.Next
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Image URL field
                 OutlinedTextField(
                     value = imageUrl,
@@ -123,9 +138,9 @@ fun AddProductScreen(
                         imeAction = ImeAction.Next
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Category field
                 OutlinedTextField(
                     value = category,
@@ -136,9 +151,9 @@ fun AddProductScreen(
                         imeAction = ImeAction.Next
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Quantity field
                 OutlinedTextField(
                     value = quantity,
@@ -150,18 +165,32 @@ fun AddProductScreen(
                         imeAction = ImeAction.Done
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 // Submit button
                 Button(
                     onClick = {
-                        // Implement add product logic with viewModel
-                        // For now, just show a success message
-                        successMessage = "Product added successfully!"
+                        try {
+                            val priceValue = price.toDouble()
+                            val quantityValue = quantity.toInt()
+
+                            viewModel.addProduct(
+                                name = name,
+                                description = description,
+                                price = priceValue,
+                                imageUrl = imageUrl.ifBlank { null },
+                                category = category,
+                                quantity = quantityValue
+                            )
+                        } catch (e: NumberFormatException) {
+                            // Handle invalid number format
+                            viewModel.clearProductDetailError()
+                            // We'll use the ViewModel's error state instead of local state
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading && 
+                    enabled = !productDetailState.isLoading && 
                              name.isNotBlank() && 
                              description.isNotBlank() && 
                              price.isNotBlank() && 
@@ -170,30 +199,26 @@ fun AddProductScreen(
                 ) {
                     Text("Add Product")
                 }
-                
+
                 // Error message
-                errorMessage?.let {
+                productDetailState.error?.let {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = it,
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
                     )
-                }
-                
-                // Success message
-                successMessage?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center
-                    )
+
+                    // Clear error after 5 seconds
+                    LaunchedEffect(productDetailState.error) {
+                        kotlinx.coroutines.delay(5000)
+                        viewModel.clearProductDetailError()
+                    }
                 }
             }
-            
+
             // Loading indicator
-            if (isLoading) {
+            if (productDetailState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }

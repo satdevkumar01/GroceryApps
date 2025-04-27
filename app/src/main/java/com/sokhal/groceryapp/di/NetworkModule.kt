@@ -1,5 +1,7 @@
 package com.sokhal.groceryapp.di
 
+import android.os.Build
+import com.sokhal.groceryapp.BuildConfig
 import com.sokhal.groceryapp.data.local.PreferencesManager
 import com.sokhal.groceryapp.data.remote.api.AuthApi
 import com.sokhal.groceryapp.data.remote.api.ProductApi
@@ -23,7 +25,7 @@ object NetworkModule {
     @Singleton
     fun provideBaseUrl(): String {
         // Use the BuildConfig field which can be configured for different build types
-        return com.sokhal.groceryapp.BuildConfig.API_BASE_URL
+        return BuildConfig.API_BASE_URL
     }
 
     @Provides

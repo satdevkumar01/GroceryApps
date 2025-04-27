@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,21 +28,34 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.sokhal.groceryapp.presentation.auth.AuthViewModel
 import com.sokhal.groceryapp.presentation.common.navigation.Screen
 
 @Composable
 fun RegisterScreen(
     navController: NavController,
-    // viewModel: RegisterViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    
+    var passwordMismatch by remember { mutableStateOf(false) }
+
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+
+    // Handle navigation when authenticated
+    LaunchedEffect(authState.isAuthenticated) {
+        if (authState.isAuthenticated) {
+            navController.navigate(Screen.Home.route) {
+                popUpTo(Screen.Register.route) { inclusive = true }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -59,7 +73,7 @@ fun RegisterScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
-            
+
             // Name field
             OutlinedTextField(
                 value = name,
@@ -71,9 +85,9 @@ fun RegisterScreen(
                     imeAction = ImeAction.Next
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Email field
             OutlinedTextField(
                 value = email,
@@ -85,13 +99,16 @@ fun RegisterScreen(
                     imeAction = ImeAction.Next
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Password field
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { 
+                    password = it
+                    passwordMismatch = password != confirmPassword && confirmPassword.isNotEmpty()
+                },
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
@@ -100,46 +117,59 @@ fun RegisterScreen(
                     imeAction = ImeAction.Next
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Confirm Password field
             OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = { 
+                    confirmPassword = it
+                    passwordMismatch = password != confirmPassword && confirmPassword.isNotEmpty()
+                },
                 label = { Text("Confirm Password") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
-                )
+                ),
+                isError = passwordMismatch
             )
-            
+
+            if (passwordMismatch) {
+                Text(
+                    text = "Passwords do not match",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // Register button
             Button(
                 onClick = {
-                    // Implement registration logic with viewModel
-                    // For now, just navigate to login screen
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Register.route) { inclusive = true }
+                    if (password == confirmPassword) {
+                        viewModel.register(name, email, password)
+                    } else {
+                        passwordMismatch = true
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading && 
+                enabled = !authState.isLoading && 
                          name.isNotBlank() && 
                          email.isNotBlank() && 
                          password.isNotBlank() && 
                          confirmPassword.isNotBlank() &&
-                         password == confirmPassword
+                         !passwordMismatch
             ) {
                 Text("Register")
             }
-            
+
             // Error message
-            errorMessage?.let {
+            authState.error?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = it,
@@ -147,9 +177,9 @@ fun RegisterScreen(
                     textAlign = TextAlign.Center
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Login link
             Text(
                 text = "Already have an account? Login",
@@ -157,9 +187,9 @@ fun RegisterScreen(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        
+
         // Loading indicator
-        if (isLoading) {
+        if (authState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }

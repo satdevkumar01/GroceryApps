@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,19 +27,21 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.sokhal.groceryapp.presentation.auth.AuthViewModel
 import com.sokhal.groceryapp.presentation.common.navigation.Screen
 
 @Composable
 fun ForgotPasswordScreen(
     navController: NavController,
-    // viewModel: ForgotPasswordViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
-    
+
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -56,13 +59,13 @@ fun ForgotPasswordScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
-            
+
             Text(
                 text = "Enter your email address and we'll send you a link to reset your password.",
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
-            
+
             // Email field
             OutlinedTextField(
                 value = email,
@@ -74,44 +77,54 @@ fun ForgotPasswordScreen(
                     imeAction = ImeAction.Done
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // Submit button
             Button(
                 onClick = {
-                    // Implement forgot password logic with viewModel
-                    // For now, just show a success message
-                    successMessage = "Password reset link sent to your email."
+                    viewModel.forgotPassword(email)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading && email.isNotBlank()
+                enabled = !authState.isLoading && email.isNotBlank()
             ) {
                 Text("Submit")
             }
-            
+
             // Error message
-            errorMessage?.let {
+            authState.error?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = it,
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center
                 )
+
+                // Clear error after 5 seconds
+                LaunchedEffect(authState.error) {
+                    kotlinx.coroutines.delay(5000)
+                    viewModel.clearError()
+                }
             }
-            
+
             // Success message
-            successMessage?.let {
+            authState.message?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = it,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
                 )
+
+                // Clear message after 5 seconds
+                LaunchedEffect(authState.message) {
+                    kotlinx.coroutines.delay(5000)
+                    viewModel.clearMessage()
+                }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Back to login link
             Text(
                 text = "Back to Login",
@@ -119,9 +132,9 @@ fun ForgotPasswordScreen(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        
+
         // Loading indicator
-        if (isLoading) {
+        if (authState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }

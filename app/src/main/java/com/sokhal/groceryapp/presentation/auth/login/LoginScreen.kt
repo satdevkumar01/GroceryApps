@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,19 +28,31 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.sokhal.groceryapp.presentation.auth.AuthViewModel
 import com.sokhal.groceryapp.presentation.common.navigation.Screen
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    // viewModel: LoginViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    
+
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+
+    // Handle navigation when authenticated
+    LaunchedEffect(authState.isAuthenticated) {
+        if (authState.isAuthenticated) {
+            navController.navigate(Screen.Home.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -57,7 +70,7 @@ fun LoginScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
-            
+
             // Email field
             OutlinedTextField(
                 value = email,
@@ -69,9 +82,9 @@ fun LoginScreen(
                     imeAction = ImeAction.Next
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Password field
             OutlinedTextField(
                 value = password,
@@ -84,9 +97,9 @@ fun LoginScreen(
                     imeAction = ImeAction.Done
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Forgot password link
             Text(
                 text = "Forgot Password?",
@@ -95,26 +108,22 @@ fun LoginScreen(
                     .clickable { navController.navigate(Screen.ForgotPassword.route) },
                 color = MaterialTheme.colorScheme.primary
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // Login button
             Button(
                 onClick = {
-                    // Implement login logic with viewModel
-                    // For now, just navigate to home screen
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
+                    viewModel.login(email, password)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+                enabled = !authState.isLoading && email.isNotBlank() && password.isNotBlank()
             ) {
                 Text("Login")
             }
-            
+
             // Error message
-            errorMessage?.let {
+            authState.error?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = it,
@@ -122,9 +131,9 @@ fun LoginScreen(
                     textAlign = TextAlign.Center
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Register link
             Text(
                 text = "Don't have an account? Register",
@@ -132,9 +141,9 @@ fun LoginScreen(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        
+
         // Loading indicator
-        if (isLoading) {
+        if (authState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
     }
