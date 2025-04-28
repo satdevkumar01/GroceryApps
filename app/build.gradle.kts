@@ -32,7 +32,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_BASE_URL", "http://192.168.29.166:8080")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.29.166:8080\"")
         }
     }
     compileOptions {
@@ -47,7 +47,7 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
+        kotlinCompilerExtensionVersion = "2.0.0"
     }
 }
 
@@ -89,6 +89,11 @@ dependencies {
 
     // Coil for image loading
     implementation(libs.coil.compose)
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
 
     // Testing
     testImplementation(libs.junit)

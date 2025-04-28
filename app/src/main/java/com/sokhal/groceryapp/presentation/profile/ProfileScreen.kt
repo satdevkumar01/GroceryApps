@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.sokhal.groceryapp.domain.model.User
@@ -47,21 +48,17 @@ import com.sokhal.groceryapp.presentation.common.navigation.Screen
 @Composable
 fun ProfileScreen(
     navController: NavController,
-    // viewModel: ProfileViewModel = hiltViewModel()
+     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     // Sample user data for testing
-    val user = remember {
-        User(
-            id = "1",
-            name = "John Doe",
-            email = "john.doe@example.com",
-            profilePicture = "https://example.com/profile.jpg"
-        )
-    }
-    
-    var name by remember { mutableStateOf(user.name) }
-    var email by remember { mutableStateOf(user.email) }
-    var profilePicture by remember { mutableStateOf(user.profilePicture ?: "") }
+
+    val user=viewModel.profileState.value.user
+
+
+
+    var name by remember { mutableStateOf(user?.name ?: "Unknow") }
+    var email by remember { mutableStateOf(user?.email ?: "unknow") }
+    var profilePicture by remember { mutableStateOf(user?.profilePicture ?: "unknow") }
     
     var isEditing by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -106,7 +103,7 @@ fun ProfileScreen(
             ) {
                 // Profile picture
                 AsyncImage(
-                    model = profilePicture.ifBlank { "https://via.placeholder.com/150" },
+                    model = profilePicture.ifBlank { "https://www.pexels.com/search/beautiful/" },
                     contentDescription = "Profile Picture",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -162,6 +159,7 @@ fun ProfileScreen(
                         onClick = {
                             // Implement update profile logic with viewModel
                             // For now, just show a success message and exit editing mode
+                            viewModel.updateProfile(name,email,profilePicture)
                             successMessage = "Profile updated successfully!"
                             isEditing = false
                         },
@@ -177,9 +175,9 @@ fun ProfileScreen(
                     Button(
                         onClick = {
                             // Reset fields and exit editing mode
-                            name = user.name
-                            email = user.email
-                            profilePicture = user.profilePicture ?: ""
+                            name = user?.name ?:""
+                            email = user?.email ?:""
+                            profilePicture = user?.profilePicture ?: ""
                             isEditing = false
                         },
                         modifier = Modifier.fillMaxWidth()

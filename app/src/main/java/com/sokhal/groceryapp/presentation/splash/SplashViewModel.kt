@@ -1,5 +1,6 @@
 package com.sokhal.groceryapp.presentation.splash
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sokhal.groceryapp.domain.repository.AuthRepository
@@ -34,6 +35,8 @@ class SplashViewModel @Inject constructor(
                 // Check if user is authenticated
                 val token = authRepository.getAuthToken()
                 val user = authRepository.getCurrentUser()
+
+                Log.e("Data","User Token : $token  and User ${user?.id} , User is null : ${user !=null}")
                 
                 _splashState.update {
                     it.copy(
